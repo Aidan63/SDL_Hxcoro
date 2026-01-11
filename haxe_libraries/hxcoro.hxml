@@ -1,0 +1,3 @@
+# @install: lix --silent download "gh://github.com/HaxeFoundation/hxcoro#d6f7c005e319ca9b70ec62834475ea8c61580333" into hxcoro/0.0.1/github/d6f7c005e319ca9b70ec62834475ea8c61580333
+-cp D:\\programming\\haxe\\hxcoro\\src
+-D hxcoro=0.0.1

@@ -1,0 +1,6 @@
+-p src
+-m Main
+-L hxcoro
+-D SDL_DIST_DIR=C:\\Users\\AidanLee\\Downloads\\SDL3-3.4.0
+--debug
+--cpp bin
