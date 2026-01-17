@@ -1,11 +1,12 @@
+import SDL;
+import cpp.marshal.RootHandle;
 import haxe.coro.schedulers.IScheduleObject;
 import hxcoro.task.ICoroNode;
-import hxcoro.CoroRun;
 import hxcoro.Coro.*;
-import hxcoro.dispatchers.IDispatcher;
+import hxcoro.CoroRun;
 import hxcoro.schedulers.EventLoopScheduler;
+import hxcoro.dispatchers.IDispatcher;
 import haxe.Exception;
-import SDL;
 
 @:coroutine function coroEntry(node:ICoroNode) {
 	trace("It works!");
@@ -23,7 +24,7 @@ private class SdlDispatcher implements IDispatcher {
 	public function dispatch(obj:IScheduleObject) {
 		final event = new Event();
 		event.type = id;
-		event.user.data1 = untyped __cpp__('{0}.mPtr', obj);
+		event.user.data1 = RootHandle.create(obj).toVoidPointer();
 
 		SDL.pushEvent(event);
 	}
@@ -64,8 +65,11 @@ function main() {
 						throw new Exception("Failed to push scheduler event");
 					}
 				case id if (id == dispatchEventId):
-					// TODO : Haxe needs a nice way to access the hxcpp object rooting API.
-					final obj : IScheduleObject = untyped __cpp__('::Dynamic { static_cast<::hx::Object*>({0}) }', event.user.data1);
+					final root = RootHandle.fromVoidPointer(event.user.data1);
+
+					final obj : IScheduleObject = root.getObject();
+
+					root.close();
 
 					obj.onSchedule();
 				case _:

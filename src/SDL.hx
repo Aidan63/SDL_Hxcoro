@@ -16,7 +16,7 @@ extern class Window {}
 @:semantics(value)
 @:cpp.ValueType({ type : "SDL_UserEvent" })
 extern class UserEvent {
-	var data1 : Pointer<cpp.Object>;
+	var data1 : Pointer<cpp.Void>;
 
 	public function new() : Void;
 }
