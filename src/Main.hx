@@ -1,12 +1,13 @@
 import SDL;
 import cpp.marshal.RootHandle;
-import haxe.coro.schedulers.IScheduleObject;
-import hxcoro.task.ICoroNode;
+import haxe.Exception;
+import haxe.coro.schedulers.IScheduler;
+import haxe.coro.dispatchers.IDispatchObject;
+import haxe.coro.dispatchers.Dispatcher;
 import hxcoro.Coro.*;
 import hxcoro.CoroRun;
+import hxcoro.task.ICoroNode;
 import hxcoro.schedulers.EventLoopScheduler;
-import hxcoro.dispatchers.IDispatcher;
-import haxe.Exception;
 
 @:coroutine function coroEntry(node:ICoroNode) {
 	trace("It works!");
@@ -14,19 +15,25 @@ import haxe.Exception;
 	trace("It still works!");
 }
 
-private class SdlDispatcher implements IDispatcher {
+private class SdlDispatcher extends Dispatcher {
 	final id : Int;
+	final s : EventLoopScheduler;
 
-	public function new(id) {
+	public function new(id, s) {
 		this.id = id;
+		this.s  = s;
 	}
 
-	public function dispatch(obj:IScheduleObject) {
+	public function dispatch(obj:IDispatchObject) {
 		final event = new Event();
 		event.type = id;
 		event.user.data1 = RootHandle.create(obj).toVoidPointer();
 
 		SDL.pushEvent(event);
+	}
+
+	function get_scheduler():IScheduler {
+		return s;
 	}
 }
 
@@ -38,8 +45,8 @@ function main() {
 	final schedulerEventId = eventIds;
 	final dispatchEventId  = eventIds + 1;
 
-	final dispatcher = new SdlDispatcher(dispatchEventId);
-	final scheduler  = new EventLoopScheduler(dispatcher);
+	final scheduler  = new EventLoopScheduler();
+	final dispatcher = new SdlDispatcher(dispatchEventId, scheduler);
 
 	final schedulerEvent = new Event();
 	schedulerEvent.type = eventIds;
@@ -47,7 +54,7 @@ function main() {
 		throw new Exception("Failed to push scheduler event");
 	}
 
-	final coroTask = CoroRun.with(scheduler).create(coroEntry);
+	final coroTask = CoroRun.with(dispatcher).create(coroEntry);
 	coroTask.start();
 	
 	var run = true;
@@ -67,11 +74,11 @@ function main() {
 				case id if (id == dispatchEventId):
 					final root = RootHandle.fromVoidPointer(event.user.data1);
 
-					final obj : IScheduleObject = root.getObject();
+					final obj : IDispatchObject = root.getObject();
 
 					root.close();
 
-					obj.onSchedule();
+					obj.onDispatch();
 				case _:
 					//
 			}
